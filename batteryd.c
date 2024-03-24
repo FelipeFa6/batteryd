@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -78,13 +80,9 @@ static void on_change(const char* cp, const char* target) {
     }
 }
 
-/*
- * State processor.
- */
+/* state processor */
 
-    static void
-process(const char* cp, struct apm_power_info* pinfo)
-{
+static void process(const char* cp, struct apm_power_info* pinfo) {
     static u_char state = APM_BATT_UNKNOWN;
 
     /* check if the state has changed.  */

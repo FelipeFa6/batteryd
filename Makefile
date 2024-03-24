@@ -1,3 +1,5 @@
+# See LICENSE file for copyright and license details.
+
 CFLAGS = -Wall -Wextra -pedantic -I/usr/X11R6/include -L/usr/X11R6/lib -lX11 -lXft -I/usr/X11R6/include/freetype2 -pthread
 
 PREFIX ?= /usr/local
