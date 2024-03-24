@@ -1,36 +1,53 @@
-# batteryd
+batteryd - battery daemon for openbsd
+============================
 
-Battery state watcher daemon for OpenBSD. Runs a script or an application when
-the battery state switches to `high`, `low`, or `critical`.
+battery state watcher daemon for openbsd. runs a
+script or an application when the battery state
+switches to `high`, `low`, or `critical`.
 
-## Usage
-```
+usage
+------------
 batteryd [-d]
-```
-By default, `batteryd` runs as a daemon. If passed the `-d` flag, `batteryd`
-enters debug mode, staying in the foreground, and logging output is printed to
-`stderr`.
 
-When run as root, it uses `/etc/batteryd` as its configuration directory. When
-run as a regular user, it uses `$HOME/.config/batteryd` as its configuration
-directory.
+by default, `batteryd` runs as a daemon. if passed
+the `-d` flag, `batteryd` enters debug mode,
+staying in the foreground, and logging output is
+printed to `stderr`.
 
-The daemon polls `apm(4)` every second to discover changes in the battery charge
-level state. Three states are handled: `critical`, `low`, and `high`. When a
-change is discovered, an executable bearing the name of the state located in the
-configuration directory is executed.
+batteryd polls `apm(4)` every second to discover
+changes in the battery charge level state. three
+states are handled: `critical`, `low`, and `high`.
+when a change is discovered, an executable bearing
+the name of the state located in the configuration
+directory is executed.
 
-## Files
+installation
+------------
+compile and copy binary to $PATH:
+$ make clean install
 
-When run as root:
-```
-/etc/batteryd/critical
-/etc/batteryd/low
-/etc/batteryd/high
-```
-When run as a user:
-```
-$HOME/.config/batteryd/critical
-$HOME/.config/batteryd/low
-$HOME/.config/batteryd/high
-```
+uninstall
+------------
+
+remove generated files on compile time:
+    $ make clean 
+
+remove from $PATH and generated files
+    $ make clean uninstall
+
+running batteryd
+-----------
+
+add the following line to your .xinitrc to start
+batteryd:
+
+    batteryd &
+
+make sure to append it before your display manager
+is executed
+
+configuration
+------------
+The configuration of batteryd is done by creating
+a custom config.h and (re)compiling the source
+code.
