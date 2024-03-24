@@ -11,24 +11,18 @@
 #include <machine/apmvar.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include "config.h"
 
-/* Macros.  */
+/* macros  */
 static bool daemonize = true;
+#define dbg(__fmt, ...) daemonize ?: fprintf(stderr, "batteryd: " __fmt "\n", __VA_ARGS__)
 
-#define dbg(__fmt, ...) \
-  daemonize ?: fprintf(stderr, "batteryd: " __fmt "\n", __VA_ARGS__)
-
-/* Signal handler.  */
-
+/* signal handler.  */
 static bool keep_running = true;
 
 static void handler(int sig) {
   keep_running = false;
 }
-
-/* config path. */
-#define GLOBAL_CONFIG "/etc/batteryd"
-#define LOCAL_CONFIG "/.config/batteryd"
 
 const char* config_path() {
   /* Return a global path when running as root.  */
