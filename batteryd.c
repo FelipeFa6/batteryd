@@ -12,53 +12,38 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 
-/*
- * Macros.
- */
-
+/* Macros.  */
 static bool daemonize = true;
 
 #define dbg(__fmt, ...) \
   daemonize ?: fprintf(stderr, "batteryd: " __fmt "\n", __VA_ARGS__)
 
-/*
- * Signal handler.
- */
+/* Signal handler.  */
 
 static bool keep_running = true;
 
-static void
-handler(int sig)
-{
+static void handler(int sig) {
   keep_running = false;
 }
 
-/*
- * Get configuration path.
- */
-
+/* config path. */
 #define GLOBAL_CONFIG "/etc/batteryd"
 #define LOCAL_CONFIG "/.config/batteryd"
 
-const char*
-config_path()
-{
-  /*
-   * Return a global path when running as root.
-   */
+const char* config_path() {
+  /* Return a global path when running as root.  */
+
   if (getuid() == 1) {
     return strdup(GLOBAL_CONFIG);
   }
-  /*
-   * Get the calling's user directory.
-   */
+
+  /* get the calling's user directory.  */
   char* home = getenv("HOME");
   if (home == NULL) {
     err(__LINE__, "%s", "HOME variable not defined");
   }
-  /*
-   * Build the local path.
-   */
+
+  /* build the local path.  */
   const size_t buflen = strlen(home) + strlen(LOCAL_CONFIG) + 1;
   char* buffer = alloca(buflen);
   memset(buffer, 0, buflen);
@@ -67,26 +52,20 @@ config_path()
   return strdup(buffer);
 }
 
-/*
- * State handlers.
- */
+/* state handlers.  */
 
-static void
-on_change(const char* cp, const char* target)
-{
+static void on_change(const char* cp, const char* target) {
   size_t buflen = strlen(cp) + strlen(target) + 2;
   char* fp = alloca(buflen);
   dbg("state is %s", target);
-  /*
-   * Create the full path.
-   */
+
+  /* create the full path.  */
   memset(fp, 0, buflen);
   strcat(fp, cp);
   strcat(fp, "/");
   strcat(fp, target);
-  /*
-   * Execute the script.
-   */
+
+  /* execute the script.  */
   switch (fork()) {
     case -1: {
       err(__LINE__, "fork");
@@ -113,16 +92,15 @@ static void
 process(const char* cp, struct apm_power_info* pinfo)
 {
   static u_char state = APM_BATT_UNKNOWN;
-  /*
-   * Check if the state has changed.
-   */
+
+  /* check if the state has changed.  */
   if (state == pinfo->battery_state) {
     return;
   }
+
   state = pinfo->battery_state;
-  /*
-   * Process the new state.
-   */
+
+  /* process the new state.  */
   switch (pinfo->battery_state) {
     case APM_BATT_CRITICAL: {
       on_change(cp, "critical");
@@ -142,13 +120,8 @@ process(const char* cp, struct apm_power_info* pinfo)
   }
 }
 
-/*
- * Argument parsing.
- */
-
-void
-parse_options(int argc, char** argv)
-{
+/* arg parsing. */
+void parse_options(int argc, char** argv) {
   int ch;
   while ((ch = getopt(argc, argv, "d")) != -1) {
     switch (ch) {
@@ -162,44 +135,30 @@ parse_options(int argc, char** argv)
   }
 }
 
-/*
- * Main loop.
- */
+int main(int argc, char** argv) {
 
-int
-main(int argc, char** argv)
-{
-  /*
-   * Parse the options.
-   */
   parse_options(argc, argv);
-  /*
-   * Check if we should daemonize.
-   */
+
   if (daemonize) {
     int nochroot = getuid() != 1;
     setsid();
     daemon(nochroot, 0 /* noclose */);
   }
-  /*
-   * Grab the config path.
-   */
+
+  /* grab the config path. */
   const char* cp = config_path();
   dbg("%s", cp);
-  /*
-   * Open the APM device.
-   */
+
+  /* open apm */
   int fd = open("/dev/apm", O_RDONLY);
   if (fd < 0) {
     err(__LINE__, "open");
   }
-  /*
-   * Register ^C.
-   */
+
+  /* register ^c.  */
   signal(SIGINT, handler);
-  /*
-   * Polling loop.
-   */
+
+  /* polling loop.  */
   while (keep_running) {
     struct apm_power_info pinfo;
     if (ioctl(fd, APM_IOC_GETPOWER, &pinfo) < 0) {
@@ -208,9 +167,8 @@ main(int argc, char** argv)
     process(cp, &pinfo);
     sleep(1);
   }
-  /*
-   * Clean-up and return.
-   */
+
+  /* Clean-up and return. */
   close(fd);
   free((void*)cp);
   return 0;

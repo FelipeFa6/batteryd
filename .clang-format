@@ -1,8 +1,0 @@
----
-AlignEscapedNewlines: Left
-AlwaysBreakAfterReturnType: AllDefinitions
-BasedOnStyle: Mozilla
-BinPackArguments: 'true'
-BinPackParameters: 'true'
-SortIncludes: 'false'
-...
