@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,14 +15,14 @@
 #include "config.h"
 
 /* macros  */
-static bool daemonize = true;
+static int daemonize = 1;
 #define dbg(__fmt, ...) daemonize ?: fprintf(stderr, "batteryd: " __fmt "\n", __VA_ARGS__)
 
 /* signal handler.  */
-static bool keep_running = true;
+static int keep_running = 1;
 
 static void handler(int sig) {
-    keep_running = false;
+    keep_running = 0;
 }
 
 const char* config_path() {
@@ -118,7 +117,7 @@ void parse_options(int argc, char** argv) {
     while ((ch = getopt(argc, argv, "d")) != -1) {
         switch (ch) {
             case 'd':
-                daemonize = false;
+                daemonize = 0;
                 break;
             default:
                 fprintf(stderr, "usage: batteryd [-d]\n");
