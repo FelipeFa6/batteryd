@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -14,36 +15,29 @@
 #include <sys/wait.h>
 #include "config.h"
 
-/* macros  */
-static int daemonize = 1;
-#define dbg(__fmt, ...) daemonize ?: fprintf(stderr, "batteryd: " __fmt "\n", __VA_ARGS__)
-
-/* signal handler.  */
-static int keep_running = 1;
-
-static void handler(int sig) {
-    keep_running = 0;
+void debug(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    fprintf(stderr, "batteryd: ");
+    vfprintf(stderr, fmt, args);
+    va_end(args);
 }
 
 const char* config_path() {
-    /* Return a global path when running as root.  */
 
-    if (getuid() == 1) {
-        return strdup(GLOBAL_CONFIG);
-    }
+    char* home = getenv("HOME");
+    const size_t buflen = strlen(home) + strlen(LOCAL_CONFIG) + 1;
+    char* buffer = alloca(buflen);
 
     /* get the calling's user directory.  */
-    char* home = getenv("HOME");
     if (home == NULL) {
         err(__LINE__, "%s", "HOME variable not defined");
     }
 
     /* build the local path.  */
-    const size_t buflen = strlen(home) + strlen(LOCAL_CONFIG) + 1;
-    char* buffer = alloca(buflen);
     memset(buffer, 0, buflen);
-    strcat(buffer, home);
-    strcat(buffer, LOCAL_CONFIG);
+    strlcpy(buffer, home, buflen);
+    strlcat(buffer, LOCAL_CONFIG, buflen);
     return strdup(buffer);
 }
 
@@ -52,13 +46,14 @@ const char* config_path() {
 static void on_change(const char* cp, const char* target) {
     size_t buflen = strlen(cp) + strlen(target) + 2;
     char* fp = alloca(buflen);
-    dbg("state is %s", target);
 
-    /* create the full path.  */
+    debug("state is %s\n", target);
+
+    /* concat path.  */
     memset(fp, 0, buflen);
-    strcat(fp, cp);
-    strcat(fp, "/");
-    strcat(fp, target);
+    strlcpy(fp, cp, buflen);
+    strlcat(fp, "/", buflen);
+    strlcat(fp, target, buflen);
 
     /* execute the script.  */
     switch (fork()) {
@@ -79,8 +74,8 @@ static void on_change(const char* cp, const char* target) {
     }
 }
 
-/* state processor */
 
+/* state processor */
 static void process(const char* cp, struct apm_power_info* pinfo) {
     static u_char state = APM_BATT_UNKNOWN;
 
@@ -116,9 +111,6 @@ void parse_options(int argc, char** argv) {
     int ch;
     while ((ch = getopt(argc, argv, "d")) != -1) {
         switch (ch) {
-            case 'd':
-                daemonize = 0;
-                break;
             default:
                 fprintf(stderr, "usage: batteryd [-d]\n");
                 exit(__LINE__);
@@ -130,15 +122,9 @@ int main(int argc, char** argv) {
 
     parse_options(argc, argv);
 
-    if (daemonize) {
-        int nochroot = getuid() != 1;
-        setsid();
-        daemon(nochroot, 0 /* noclose */);
-    }
-
     /* grab the config path. */
     const char* cp = config_path();
-    dbg("%s", cp);
+    debug("%s\n", cp);
 
     /* open apm */
     int fd = open("/dev/apm", O_RDONLY);
@@ -146,11 +132,8 @@ int main(int argc, char** argv) {
         err(__LINE__, "open");
     }
 
-    /* register ^c.  */
-    signal(SIGINT, handler);
-
     /* polling loop.  */
-    while (keep_running) {
+    while (1) {
         struct apm_power_info pinfo;
         if (ioctl(fd, APM_IOC_GETPOWER, &pinfo) < 0) {
             err(__LINE__, "ioctl");
@@ -159,7 +142,6 @@ int main(int argc, char** argv) {
         sleep(1);
     }
 
-    /* Clean-up and return. */
     close(fd);
     free((void*)cp);
     return 0;
