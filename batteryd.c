@@ -3,8 +3,8 @@
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,9 +13,17 @@
 #include <machine/apmvar.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+
 #include "config.h"
 
+/* global variables */
+bool verbose = false;
+
 void debug(const char *fmt, ...) {
+    if(!verbose) {
+        return;
+    }
+
     va_list args;
     va_start(args, fmt);
     fprintf(stderr, "batteryd: ");
@@ -42,10 +50,9 @@ const char* config_path() {
 }
 
 /* state handlers.  */
-
 static void on_change(const char* cp, const char* target) {
     size_t buflen = strlen(cp) + strlen(target) + 2;
-    char* fp = alloca(buflen);
+    char* fp      = alloca(buflen);
 
     debug("state is %s\n", target);
 
@@ -74,7 +81,6 @@ static void on_change(const char* cp, const char* target) {
     }
 }
 
-
 /* state processor */
 static void process(const char* cp, struct apm_power_info* pinfo) {
     static u_char state = APM_BATT_UNKNOWN;
@@ -89,30 +95,36 @@ static void process(const char* cp, struct apm_power_info* pinfo) {
     /* process the new state.  */
     switch (pinfo->battery_state) {
         case APM_BATT_CRITICAL: {
-                                    on_change(cp, "critical");
-                                    break;
-                                }
+            on_change(cp, "critical");
+            break;
+        }
         case APM_BATT_LOW: {
-                               on_change(cp, "low");
-                               break;
-                           }
+            on_change(cp, "low");
+            break;
+        }
         case APM_BATT_HIGH: {
-                                on_change(cp, "high");
-                                break;
-                            }
+            on_change(cp, "high");
+            break;
+        }
+        case APM_BATT_CHARGING: {
+            on_change(cp, "charging");
+            break;
+        }
         default: {
-                     break;
-                 }
+            break;
+        }
     }
 }
 
-/* arg parsing. */
 void parse_options(int argc, char** argv) {
     int ch;
-    while ((ch = getopt(argc, argv, "d")) != -1) {
+    while ((ch = getopt(argc, argv, "v")) != -1) {
         switch (ch) {
+            case 'v':
+                verbose = true;
+                break;
             default:
-                fprintf(stderr, "usage: batteryd [-d]\n");
+                fprintf(stderr, "usage: batteryd [-v]\n");
                 exit(__LINE__);
         }
     }
@@ -122,7 +134,7 @@ int main(int argc, char** argv) {
 
     parse_options(argc, argv);
 
-    /* grab the config path. */
+    /* get config path. */
     const char* cp = config_path();
     debug("%s\n", cp);
 
