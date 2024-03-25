@@ -1,43 +1,42 @@
-batteryd - battery daemon for openbsd
+batteryd - battery listener for OpenBSD
 ============================
 
-battery state watcher daemon for openbsd. runs a
-script or an application when the battery state
-switches to `high`, `low`, or `critical`.
+
+features
+------------
+- under 150 lines of c
+- no dependencies
+
 
 usage
 ------------
-batteryd [-d]
+batteryd [-v]
 
-by default, `batteryd` runs as a daemon. if passed
-the `-d` flag, `batteryd` enters debug mode,
-staying in the foreground, and logging output is
-printed to `stderr`.
+by default `batteryd' runs as a foreground
+process, this allows it to become a background
+process passing '&'.
 
-batteryd polls `apm(4)` every second to discover
-changes in the battery charge level state. three
-states are handled: `critical`, `low`, and `high`.
-when a change is discovered, an executable bearing
-the name of the state located in the configuration
-directory is executed.
+`batteryd` polls `apm(4)` every second to discover
+changes in the battery charge level state.
+
 
 installation
 ------------
 compile and copy binary to $PATH:
-$ make clean install
+    $ make clean install
+
 
 uninstall
 ------------
-
 remove generated files on compile time:
     $ make clean 
 
 remove from $PATH and generated files
     $ make clean uninstall
 
+
 running batteryd
 -----------
-
 add the following line to your .xinitrc to start
 batteryd:
 
@@ -46,8 +45,9 @@ batteryd:
 make sure to append it before your display manager
 is executed
 
+
 configuration
 ------------
-The configuration of batteryd is done by creating
+the configuration of batteryd is done by creating
 a custom config.h and (re)compiling the source
 code.
