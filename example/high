@@ -1,0 +1,2 @@
+#!/bin/sh
+herbe "Battery: $(apm -l)%" &
