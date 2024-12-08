@@ -1,12 +1,7 @@
 batteryd - battery listener for OpenBSD
 ============================
-
-
-features
-------------
 - under 150 lines of c
 - no dependencies
-
 
 usage
 ------------
@@ -25,7 +20,6 @@ installation
 compile and copy binary to $PATH:
     $ make clean install
 
-
 uninstall
 ------------
 remove generated files on compile time:
@@ -41,10 +35,6 @@ add the following line to your .xinitrc to start
 batteryd:
 
     batteryd &
-
-make sure to append it before your display manager
-is executed
-
 
 configuration
 ------------
